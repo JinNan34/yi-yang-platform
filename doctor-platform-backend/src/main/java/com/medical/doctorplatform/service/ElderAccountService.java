@@ -40,7 +40,8 @@ public class ElderAccountService {
         if (elderId != null) {
             w.eq(ElderAccount::getElderId, elderId);
         }
-        w.orderByDesc(ElderAccount::getCreateTime);
+        // 自增主键删除后不回收，可能出现跳号；列表按主键升序便于阅读
+        w.orderByAsc(ElderAccount::getId);
         IPage<ElderAccount> result = elderAccountMapper.selectPage(p, w);
         elderLookup.fillElderNames(result.getRecords(), ElderAccount::getElderId, ElderAccount::setElderName);
         return result;

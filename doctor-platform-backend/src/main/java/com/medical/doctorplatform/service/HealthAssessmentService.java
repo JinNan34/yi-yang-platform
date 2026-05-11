@@ -34,7 +34,7 @@ public class HealthAssessmentService {
         if (elderId != null) {
             w.eq(HealthAssessment::getElderId, elderId);
         }
-        w.orderByDesc(HealthAssessment::getAssessmentTime);
+        w.orderByAsc(HealthAssessment::getId);
         IPage<HealthAssessment> result = healthAssessmentMapper.selectPage(p, w);
         elderLookup.fillElderNames(result.getRecords(), HealthAssessment::getElderId, HealthAssessment::setElderName);
         return result;

@@ -29,7 +29,8 @@
       v-loading="loading"
       empty-text="暂无干预记录"
     >
-      <el-table-column prop="id" label="ID" width="70" />
+      <el-table-column label="序号" type="index" width="64" :index="rowIndex" />
+      <el-table-column prop="id" label="记录ID" width="88" />
       <el-table-column prop="elderName" label="老人姓名" min-width="100" show-overflow-tooltip />
       <el-table-column prop="elderId" label="老人ID" width="90" />
       <el-table-column prop="followupId" label="随访计划ID" width="120" />
@@ -96,12 +97,14 @@ import { reactive, ref, onMounted } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import http from '../api/http'
 import ElderSelect from '../components/ElderSelect.vue'
+import { createRowIndexGetter } from '../utils/listTable'
 import { required } from '../utils/validators'
 
 const loading = ref(false)
 const saving = ref(false)
 const page = ref(1)
 const size = 10
+const rowIndex = createRowIndexGetter(page, size)
 const query = reactive({ elderName: '', elderId: undefined })
 const table = reactive({ records: [], total: 0 })
 const visible = ref(false)

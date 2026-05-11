@@ -34,7 +34,7 @@ public class HealthRecordService {
         if (elderId != null) {
             w.eq(HealthRecord::getElderId, elderId);
         }
-        w.orderByDesc(HealthRecord::getRecordTime);
+        w.orderByAsc(HealthRecord::getId);
         IPage<HealthRecord> result = healthRecordMapper.selectPage(p, w);
         elderLookup.fillElderNames(result.getRecords(), HealthRecord::getElderId, HealthRecord::setElderName);
         return result;
@@ -81,7 +81,7 @@ public class HealthRecordService {
         Page<HealthRecord> p = new Page<>(page, size);
         LambdaQueryWrapper<HealthRecord> w = new LambdaQueryWrapper<>();
         w.eq(HealthRecord::getElderId, elderId);
-        w.orderByDesc(HealthRecord::getRecordTime);
+        w.orderByAsc(HealthRecord::getId);
         IPage<HealthRecord> result = healthRecordMapper.selectPage(p, w);
         elderLookup.fillElderNames(result.getRecords(), HealthRecord::getElderId, HealthRecord::setElderName);
         return result;

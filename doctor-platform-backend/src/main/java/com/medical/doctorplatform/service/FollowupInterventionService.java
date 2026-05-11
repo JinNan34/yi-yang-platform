@@ -37,7 +37,7 @@ public class FollowupInterventionService {
         if (followupId != null) {
             w.eq(FollowupInterventionRecord::getFollowupId, followupId);
         }
-        w.orderByDesc(FollowupInterventionRecord::getInterventionTime);
+        w.orderByAsc(FollowupInterventionRecord::getId);
         IPage<FollowupInterventionRecord> result = followupInterventionRecordMapper.selectPage(p, w);
         elderLookup.fillElderNames(result.getRecords(), FollowupInterventionRecord::getElderId, FollowupInterventionRecord::setElderName);
         return result;

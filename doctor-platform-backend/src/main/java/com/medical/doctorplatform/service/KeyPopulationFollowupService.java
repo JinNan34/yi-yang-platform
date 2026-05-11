@@ -33,7 +33,7 @@ public class KeyPopulationFollowupService {
         if (elderId != null) {
             w.eq(KeyPopulationFollowup::getElderId, elderId);
         }
-        w.orderByDesc(KeyPopulationFollowup::getCreateTime);
+        w.orderByAsc(KeyPopulationFollowup::getId);
         IPage<KeyPopulationFollowup> result = keyPopulationFollowupMapper.selectPage(p, w);
         elderLookup.fillElderNames(result.getRecords(), KeyPopulationFollowup::getElderId, KeyPopulationFollowup::setElderName);
         return result;

@@ -37,7 +37,7 @@ public class HealthAlertService {
         if (status != null) {
             w.eq(HealthAlert::getStatus, status);
         }
-        w.orderByDesc(HealthAlert::getCreateTime);
+        w.orderByAsc(HealthAlert::getId);
         IPage<HealthAlert> result = healthAlertMapper.selectPage(p, w);
         elderLookup.fillElderNames(result.getRecords(), HealthAlert::getElderId, HealthAlert::setElderName);
         return result;

@@ -28,6 +28,7 @@
       :closable="false"
       show-icon
       :title="alertTitle"
+      description="列表默认按「记录ID」升序。「序号」为当前筛选结果内的连续行号（跨页累加）。记录ID 为数据库自增主键，删除后不会回收已用号码，出现跳号是正常现象。"
     />
     <el-table
       :data="table.records"
@@ -36,7 +37,8 @@
       v-loading="loading"
       empty-text="暂无账户数据"
     >
-      <el-table-column prop="id" label="ID" width="70" />
+      <el-table-column label="序号" type="index" width="64" :index="rowIndex" />
+      <el-table-column prop="id" label="记录ID" width="88" />
       <el-table-column prop="elderName" label="老人姓名" min-width="100" show-overflow-tooltip />
       <el-table-column prop="elderId" label="老人ID" width="90" />
       <el-table-column prop="accountNo" label="账户号" width="140" />
@@ -105,6 +107,7 @@ import { reactive, ref, computed, onMounted } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import http from '../api/http'
 import ElderSelect from '../components/ElderSelect.vue'
+import { createRowIndexGetter } from '../utils/listTable'
 import { useUserStore } from '../stores/user'
 import { required } from '../utils/validators'
 
@@ -120,6 +123,7 @@ const loading = ref(false)
 const saving = ref(false)
 const page = ref(1)
 const size = 10
+const rowIndex = createRowIndexGetter(page, size)
 const query = reactive({ elderName: '', elderId: undefined })
 const table = reactive({ records: [], total: 0 })
 const visible = ref(false)

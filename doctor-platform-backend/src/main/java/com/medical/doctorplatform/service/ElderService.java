@@ -31,7 +31,7 @@ public class ElderService {
         if (StringUtils.hasText(name)) {
             w.like(Elder::getName, name);
         }
-        w.orderByDesc(Elder::getCreateTime);
+        w.orderByAsc(Elder::getId);
         return elderMapper.selectPage(p, w);
     }
 

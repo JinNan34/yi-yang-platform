@@ -20,7 +20,8 @@
       v-loading="loading"
       empty-text="暂无数据，可先新增老人档案"
     >
-      <el-table-column prop="id" label="ID" width="70" />
+      <el-table-column label="序号" type="index" width="64" :index="rowIndex" />
+      <el-table-column prop="id" label="记录ID" width="88" />
       <el-table-column prop="name" label="姓名" min-width="90" />
       <el-table-column prop="idCard" label="身份证" width="180" />
       <el-table-column prop="phone" label="电话" width="130" />
@@ -105,12 +106,14 @@
 import { reactive, ref, onMounted, nextTick } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import http from '../api/http'
+import { createRowIndexGetter } from '../utils/listTable'
 import { required, optionalMobile, optionalIdCard18, MOBILE_PATTERN } from '../utils/validators'
 
 const loading = ref(false)
 const saving = ref(false)
 const page = ref(1)
 const size = ref(10)
+const rowIndex = createRowIndexGetter(page, size)
 
 function onSizeChange() {
   page.value = 1
