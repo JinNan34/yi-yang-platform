@@ -27,8 +27,9 @@ public class FollowupInterventionController {
             @RequestParam(defaultValue = "1") long page,
             @RequestParam(defaultValue = "10") long size,
             @RequestParam(required = false) Long elderId,
+            @RequestParam(required = false) String elderName,
             @RequestParam(required = false) Long followupId) {
-        return ApiResult.ok(followupInterventionService.page(page, size, elderId, followupId));
+        return ApiResult.ok(followupInterventionService.page(page, size, elderId, elderName, followupId));
     }
 
     @GetMapping("/{id}")

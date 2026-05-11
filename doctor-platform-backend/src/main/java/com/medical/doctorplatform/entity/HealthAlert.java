@@ -1,6 +1,7 @@
 package com.medical.doctorplatform.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -17,6 +18,8 @@ public class HealthAlert {
     /** 登记/负责医生，用于数据权限 */
     private Long doctorId;
     private Long elderId;
+    @TableField(exist = false)
+    private String elderName;
     private String alertType;
     private String alertLevel;
     private String message;

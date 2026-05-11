@@ -26,8 +26,9 @@ public class HealthRecordController {
     public ApiResult<IPage<HealthRecord>> page(
             @RequestParam(defaultValue = "1") long page,
             @RequestParam(defaultValue = "10") long size,
-            @RequestParam(required = false) Long elderId) {
-        return ApiResult.ok(healthRecordService.page(page, size, elderId));
+            @RequestParam(required = false) Long elderId,
+            @RequestParam(required = false) String elderName) {
+        return ApiResult.ok(healthRecordService.page(page, size, elderId, elderName));
     }
 
     @GetMapping("/{id}")

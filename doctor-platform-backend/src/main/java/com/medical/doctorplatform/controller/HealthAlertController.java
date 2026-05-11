@@ -29,8 +29,9 @@ public class HealthAlertController {
             @RequestParam(defaultValue = "1") long page,
             @RequestParam(defaultValue = "10") long size,
             @RequestParam(required = false) Long elderId,
+            @RequestParam(required = false) String elderName,
             @RequestParam(required = false) Integer status) {
-        return ApiResult.ok(healthAlertService.page(page, size, elderId, status));
+        return ApiResult.ok(healthAlertService.page(page, size, elderId, elderName, status));
     }
 
     @GetMapping("/{id}")

@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,16 +20,24 @@ import java.time.LocalDateTime;
 public class HealthAssessmentService {
 
     private final HealthAssessmentMapper healthAssessmentMapper;
+    private final ElderLookupService elderLookup;
     private final RecordPermissionService permissionService;
 
-    public IPage<HealthAssessment> page(long page, long size, Long elderId) {
+    public IPage<HealthAssessment> page(long page, long size, Long elderId, String elderName) {
         Page<HealthAssessment> p = new Page<>(page, size);
         LambdaQueryWrapper<HealthAssessment> w = new LambdaQueryWrapper<>();
+        Optional<List<Long>> nameFilter = elderLookup.resolveElderIdsForNameQuery(elderName);
+        if (nameFilter.isPresent() && nameFilter.get().isEmpty()) {
+            return elderLookup.emptyPage(page, size);
+        }
+        nameFilter.ifPresent(ids -> w.in(HealthAssessment::getElderId, ids));
         if (elderId != null) {
             w.eq(HealthAssessment::getElderId, elderId);
         }
         w.orderByDesc(HealthAssessment::getAssessmentTime);
-        return healthAssessmentMapper.selectPage(p, w);
+        IPage<HealthAssessment> result = healthAssessmentMapper.selectPage(p, w);
+        elderLookup.fillElderNames(result.getRecords(), HealthAssessment::getElderId, HealthAssessment::setElderName);
+        return result;
     }
 
     public HealthAssessment getById(Long id) {

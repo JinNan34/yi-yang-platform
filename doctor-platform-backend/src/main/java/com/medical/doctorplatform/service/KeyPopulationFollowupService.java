@@ -10,22 +10,33 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class KeyPopulationFollowupService {
 
     private final KeyPopulationFollowupMapper keyPopulationFollowupMapper;
+    private final ElderLookupService elderLookup;
     private final RecordPermissionService permissionService;
 
-    public IPage<KeyPopulationFollowup> page(long page, long size, Long elderId) {
+    public IPage<KeyPopulationFollowup> page(long page, long size, Long elderId, String elderName) {
         Page<KeyPopulationFollowup> p = new Page<>(page, size);
         LambdaQueryWrapper<KeyPopulationFollowup> w = new LambdaQueryWrapper<>();
+        Optional<List<Long>> nameFilter = elderLookup.resolveElderIdsForNameQuery(elderName);
+        if (nameFilter.isPresent() && nameFilter.get().isEmpty()) {
+            return elderLookup.emptyPage(page, size);
+        }
+        nameFilter.ifPresent(ids -> w.in(KeyPopulationFollowup::getElderId, ids));
         if (elderId != null) {
             w.eq(KeyPopulationFollowup::getElderId, elderId);
         }
         w.orderByDesc(KeyPopulationFollowup::getCreateTime);
-        return keyPopulationFollowupMapper.selectPage(p, w);
+        IPage<KeyPopulationFollowup> result = keyPopulationFollowupMapper.selectPage(p, w);
+        elderLookup.fillElderNames(result.getRecords(), KeyPopulationFollowup::getElderId, KeyPopulationFollowup::setElderName);
+        return result;
     }
 
     public KeyPopulationFollowup getById(Long id) {

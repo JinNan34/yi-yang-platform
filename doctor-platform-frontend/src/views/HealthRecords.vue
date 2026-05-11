@@ -1,16 +1,25 @@
 <template>
   <el-card>
     <div class="toolbar">
+      <el-input
+        v-model.trim="query.elderName"
+        placeholder="按老人姓名模糊查询"
+        clearable
+        maxlength="50"
+        show-word-limit
+        class="name-filter"
+        @clear="search"
+      />
       <el-input-number
         v-model="query.elderId"
         :min="1"
         :step="1"
         :controls="true"
         controls-position="right"
-        placeholder="老人 ID"
+        placeholder="老人 ID（可选）"
         class="num-filter"
       />
-      <span class="hint">留空则查询全部</span>
+      <span class="hint">姓名、ID 可单独或组合使用；均留空则查全部</span>
       <el-button type="primary" @click="search">查询</el-button>
       <el-button type="success" @click="openEdit()">新增记录</el-button>
     </div>
@@ -22,6 +31,7 @@
       empty-text="暂无体征记录，请选择老人或新增一条"
     >
       <el-table-column prop="id" label="ID" width="70" />
+      <el-table-column prop="elderName" label="老人姓名" min-width="100" show-overflow-tooltip />
       <el-table-column prop="elderId" label="老人ID" width="90" />
       <el-table-column label="血压" width="120">
         <template #default="{ row }">{{ row.systolicBp ?? '—' }}/{{ row.diastolicBp ?? '—' }}</template>
@@ -54,8 +64,8 @@
       @closed="resetForm"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
-        <el-form-item label="老人ID" prop="elderId">
-          <el-input-number v-model="form.elderId" :min="1" :step="1" class="wfull" placeholder="必填" />
+        <el-form-item label="关联老人" prop="elderId">
+          <ElderSelect v-model="form.elderId" />
         </el-form-item>
         <el-form-item label="收缩压" prop="systolicBp">
           <el-input-number v-model="form.systolicBp" :min="0" :max="300" class="wfull" placeholder="mmHg" />
@@ -100,13 +110,14 @@
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import http from '../api/http'
+import ElderSelect from '../components/ElderSelect.vue'
 import { bloodPressurePair } from '../utils/validators'
 
 const loading = ref(false)
 const saving = ref(false)
 const page = ref(1)
 const size = 10
-const query = reactive({ elderId: undefined })
+const query = reactive({ elderName: '', elderId: undefined })
 const table = reactive({ records: [], total: 0 })
 const visible = ref(false)
 const formRef = ref()
@@ -125,8 +136,14 @@ const form = reactive({
 
 const rules = {
   elderId: [
-    { required: true, message: '请填写老人 ID', trigger: 'change' },
-    { type: 'number', min: 1, message: '老人 ID 须为大于 0 的数字', trigger: 'change' }
+    {
+      required: true,
+      validator: (_r, v, cb) => {
+        if (v == null || v === '' || Number(v) < 1) cb(new Error('请选择关联老人'))
+        else cb()
+      },
+      trigger: 'change'
+    }
   ],
   systolicBp: [{ validator: bloodPressurePair(form), trigger: 'blur' }],
   diastolicBp: [{ validator: bloodPressurePair(form), trigger: 'blur' }]
@@ -136,7 +153,12 @@ async function load() {
   loading.value = true
   try {
     const data = await http.get('/health-records', {
-      params: { page: page.value, size, elderId: query.elderId || undefined }
+      params: {
+        page: page.value,
+        size,
+        elderName: query.elderName || undefined,
+        elderId: query.elderId || undefined
+      }
     })
     table.records = data.records || []
     table.total = data.total || 0
@@ -176,7 +198,7 @@ async function save() {
   try {
     await formRef.value?.validate()
   } catch {
-    ElMessage.warning('请检查表单：老人 ID 与血压是否合理')
+    ElMessage.warning('请检查表单：关联老人与血压是否合理')
     return
   }
   saving.value = true
@@ -221,8 +243,11 @@ onMounted(load)
   font-size: 12px;
   color: #909399;
 }
+.name-filter {
+  width: 220px;
+}
 .num-filter {
-  width: 160px;
+  width: 168px;
 }
 .pager {
   margin-top: 16px;

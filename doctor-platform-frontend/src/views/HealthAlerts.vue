@@ -1,15 +1,24 @@
 <template>
   <el-card>
     <div class="toolbar">
+      <el-input
+        v-model.trim="query.elderName"
+        placeholder="按老人姓名模糊查询"
+        clearable
+        maxlength="50"
+        show-word-limit
+        class="name-filter"
+        @clear="search"
+      />
       <el-input-number
         v-model="query.elderId"
         :min="1"
         :step="1"
         controls-position="right"
-        placeholder="老人 ID"
+        placeholder="老人 ID（可选）"
         class="num-filter"
       />
-      <span class="hint">留空查全部</span>
+      <span class="hint">姓名、ID 可组合；均留空查全部</span>
       <el-select v-model="query.status" clearable placeholder="处理状态" style="width: 130px">
         <el-option :value="0" label="待处理" />
         <el-option :value="1" label="已处理" />
@@ -25,6 +34,7 @@
       empty-text="暂无预警记录"
     >
       <el-table-column prop="id" label="ID" width="70" />
+      <el-table-column prop="elderName" label="老人姓名" min-width="100" show-overflow-tooltip />
       <el-table-column prop="elderId" label="老人ID" width="90" />
       <el-table-column prop="alertType" label="类型" width="120" />
       <el-table-column prop="alertLevel" label="级别" width="90" />
@@ -57,8 +67,8 @@
       @closed="resetForm"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="老人ID" prop="elderId">
-          <el-input-number v-model="form.elderId" :min="1" :step="1" class="wfull" />
+        <el-form-item label="关联老人" prop="elderId">
+          <ElderSelect v-model="form.elderId" />
         </el-form-item>
         <el-form-item label="预警类型" prop="alertType">
           <el-input v-model="form.alertType" placeholder="如：血压异常、跌倒风险" maxlength="50" show-word-limit clearable />
@@ -86,13 +96,14 @@
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import http from '../api/http'
+import ElderSelect from '../components/ElderSelect.vue'
 import { required } from '../utils/validators'
 
 const loading = ref(false)
 const saving = ref(false)
 const page = ref(1)
 const size = 10
-const query = reactive({ elderId: undefined, status: null })
+const query = reactive({ elderName: '', elderId: undefined, status: null })
 const table = reactive({ records: [], total: 0 })
 const visible = ref(false)
 const formRef = ref()
@@ -100,8 +111,14 @@ const form = reactive({ id: null, elderId: undefined, alertType: '', alertLevel:
 
 const rules = {
   elderId: [
-    { required: true, message: '请填写老人 ID', trigger: 'change' },
-    { type: 'number', min: 1, message: '老人 ID 须大于 0', trigger: 'change' }
+    {
+      required: true,
+      validator: (_r, v, cb) => {
+        if (v == null || v === '' || Number(v) < 1) cb(new Error('请选择关联老人'))
+        else cb()
+      },
+      trigger: 'change'
+    }
   ],
   alertType: required('请填写预警类型'),
   alertLevel: required('请选择级别', 'change'),
@@ -112,7 +129,13 @@ async function load() {
   loading.value = true
   try {
     const data = await http.get('/health-alerts', {
-      params: { page: page.value, size, elderId: query.elderId || undefined, status: query.status }
+      params: {
+        page: page.value,
+        size,
+        elderName: query.elderName || undefined,
+        elderId: query.elderId || undefined,
+        status: query.status
+      }
     })
     table.records = data.records || []
     table.total = data.total || 0
@@ -210,8 +233,11 @@ onMounted(load)
   font-size: 12px;
   color: #909399;
 }
+.name-filter {
+  width: 220px;
+}
 .num-filter {
-  width: 160px;
+  width: 168px;
 }
 .pager {
   margin-top: 16px;
