@@ -10,16 +10,6 @@
         class="name-filter"
         @clear="search"
       />
-      <el-input-number
-        v-model="query.elderId"
-        :min="1"
-        :step="1"
-        :controls="true"
-        controls-position="right"
-        placeholder="老人 ID（可选）"
-        class="num-filter"
-      />
-      <span class="hint">姓名、ID 可单独或组合使用；均留空则查全部</span>
       <el-button type="primary" @click="search">查询</el-button>
       <el-button type="success" @click="openEdit()">新增记录</el-button>
     </div>
@@ -30,10 +20,8 @@
       v-loading="loading"
       empty-text="暂无体征记录，请选择老人或新增一条"
     >
-      <el-table-column label="序号" type="index" width="64" :index="rowIndex" />
-      <el-table-column prop="id" label="记录ID" width="88" />
+      <el-table-column label="序号" type="index" width="64" />
       <el-table-column prop="elderName" label="老人姓名" min-width="100" show-overflow-tooltip />
-      <el-table-column prop="elderId" label="老人ID" width="90" />
       <el-table-column label="血压" width="120">
         <template #default="{ row }">{{ row.systolicBp ?? '—' }}/{{ row.diastolicBp ?? '—' }}</template>
       </el-table-column>

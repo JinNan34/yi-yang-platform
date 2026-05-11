@@ -53,8 +53,8 @@ const loading = ref(false)
 const loginHint = ref('')
 const formRef = ref()
 const form = reactive({
-  username: isDev ? 'doctor' : '',
-  password: isDev ? '123456' : ''
+  username: '',
+  password: ''
 })
 
 const rules = {

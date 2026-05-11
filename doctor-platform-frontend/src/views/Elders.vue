@@ -20,8 +20,7 @@
       v-loading="loading"
       empty-text="暂无数据，可先新增老人档案"
     >
-      <el-table-column label="序号" type="index" width="64" :index="rowIndex" />
-      <el-table-column prop="id" label="记录ID" width="88" />
+      <el-table-column label="序号" type="index" width="64" />
       <el-table-column prop="name" label="姓名" min-width="90" />
       <el-table-column prop="idCard" label="身份证" width="180" />
       <el-table-column prop="phone" label="电话" width="130" />

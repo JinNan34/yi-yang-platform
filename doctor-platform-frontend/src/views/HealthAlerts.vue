@@ -10,15 +10,6 @@
         class="name-filter"
         @clear="search"
       />
-      <el-input-number
-        v-model="query.elderId"
-        :min="1"
-        :step="1"
-        controls-position="right"
-        placeholder="老人 ID（可选）"
-        class="num-filter"
-      />
-      <span class="hint">姓名、ID 可组合；均留空查全部</span>
       <el-select v-model="query.status" clearable placeholder="处理状态" style="width: 130px">
         <el-option :value="0" label="待处理" />
         <el-option :value="1" label="已处理" />
@@ -33,10 +24,8 @@
       v-loading="loading"
       empty-text="暂无预警记录"
     >
-      <el-table-column label="序号" type="index" width="64" :index="rowIndex" />
-      <el-table-column prop="id" label="记录ID" width="88" />
+      <el-table-column label="序号" type="index" width="64" />
       <el-table-column prop="elderName" label="老人姓名" min-width="100" show-overflow-tooltip />
-      <el-table-column prop="elderId" label="老人ID" width="90" />
       <el-table-column prop="alertType" label="类型" width="120" />
       <el-table-column prop="alertLevel" label="级别" width="90" />
       <el-table-column prop="message" label="内容" show-overflow-tooltip />

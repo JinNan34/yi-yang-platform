@@ -10,15 +10,6 @@
         class="name-filter"
         @clear="search"
       />
-      <el-input-number
-        v-model="query.elderId"
-        :min="1"
-        :step="1"
-        controls-position="right"
-        placeholder="老人 ID（可选）"
-        class="num-filter"
-      />
-      <span class="hint">姓名、ID 可组合；均留空则查全部</span>
       <el-button type="primary" @click="search">查询</el-button>
       <el-button type="success" @click="openEdit()">新增随访计划</el-button>
     </div>
@@ -29,10 +20,8 @@
       v-loading="loading"
       empty-text="暂无随访计划"
     >
-      <el-table-column label="序号" type="index" width="64" :index="rowIndex" />
-      <el-table-column prop="id" label="记录ID" width="88" />
+      <el-table-column label="序号" type="index" width="64" />
       <el-table-column prop="elderName" label="老人姓名" min-width="100" show-overflow-tooltip />
-      <el-table-column prop="elderId" label="老人ID" width="90" />
       <el-table-column prop="riskType" label="风险类型" width="120" />
       <el-table-column prop="followupCycleDays" label="周期(天)" width="100" />
       <el-table-column prop="nextFollowupDate" label="下次随访" width="120" />
