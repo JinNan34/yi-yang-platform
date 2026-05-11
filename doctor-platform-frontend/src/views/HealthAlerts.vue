@@ -27,7 +27,9 @@
       <el-table-column label="序号" type="index" width="64" />
       <el-table-column prop="elderName" label="老人姓名" min-width="100" show-overflow-tooltip />
       <el-table-column prop="alertType" label="类型" width="120" />
-      <el-table-column prop="alertLevel" label="级别" width="90" />
+      <el-table-column label="级别" width="90">
+        <template #default="{ row }">{{ row.alertLevel === 'HIGH' ? '高' : row.alertLevel === 'MEDIUM' ? '中' : row.alertLevel === 'LOW' ? '低' : row.alertLevel }}</template>
+      </el-table-column>
       <el-table-column prop="message" label="内容" show-overflow-tooltip />
       <el-table-column label="状态" width="90">
         <template #default="{ row }">{{ row.status === 1 ? '已处理' : '待处理' }}</template>
