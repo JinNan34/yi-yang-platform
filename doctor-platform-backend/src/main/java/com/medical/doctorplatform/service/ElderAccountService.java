@@ -6,10 +6,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import java.util.List;
 import java.util.Optional;
+import com.medical.doctorplatform.common.ForbiddenOperationException;
+import com.medical.doctorplatform.domain.DoctorRole;
 import com.medical.doctorplatform.entity.Elder;
 import com.medical.doctorplatform.entity.ElderAccount;
 import com.medical.doctorplatform.mapper.ElderAccountMapper;
 import com.medical.doctorplatform.mapper.ElderMapper;
+import com.medical.doctorplatform.security.LoginUser;
+import com.medical.doctorplatform.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -61,6 +65,10 @@ public class ElderAccountService {
     }
 
     public ElderAccount create(ElderAccount account) {
+        LoginUser me = SecurityUtils.currentUser();
+        if (!DoctorRole.isAdmin(me.getDoctor().getRole())) {
+            throw new ForbiddenOperationException("仅系统管理员可手动新建老人账户；新建老人档案时系统会自动开户。");
+        }
         Elder elder = elderMapper.selectById(account.getElderId());
         if (elder == null) {
             throw new IllegalArgumentException("老人不存在");
@@ -98,14 +106,21 @@ public class ElderAccountService {
     }
 
     public void delete(Long id) {
+        LoginUser me = SecurityUtils.currentUser();
+        if (!DoctorRole.isAdmin(me.getDoctor().getRole())) {
+            throw new ForbiddenOperationException("仅系统管理员可删除老人账户；医生与科室负责人无删除权限。");
+        }
         ElderAccount existing = getById(id);
         Elder elder = elderMapper.selectById(existing.getElderId());
         if (elder == null) {
             throw new IllegalArgumentException("关联老人不存在");
         }
         permissionService.assertCanModifyElder(elder);
-        
-        elderAccountMapper.deleteById(id);
-        log.info("删除老人账户: id={}", id);
+
+        int rows = elderAccountMapper.physicalDeleteById(id);
+        if (rows == 0) {
+            throw new IllegalArgumentException("账户不存在或已删除");
+        }
+        log.info("物理删除老人账户: id={}, elderId={}, operator={}", id, existing.getElderId(), me.getDoctorId());
     }
 }

@@ -20,14 +20,14 @@
       />
       <span class="hint">姓名、ID 可组合；均留空则查全部</span>
       <el-button type="primary" @click="search">查询</el-button>
-      <el-button type="success" @click="openEdit()">新增账户</el-button>
+      <el-button v-if="isAdmin" type="success" @click="openEdit()">新增账户</el-button>
     </div>
     <el-alert
       class="mb"
       type="info"
       :closable="false"
       show-icon
-      title="老人账户需绑定已建档老人；新建老人时系统可自动生成账户，此处用于补建或维护。"
+      :title="alertTitle"
     />
     <el-table
       :data="table.records"
@@ -47,7 +47,7 @@
       <el-table-column label="操作" width="140" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="danger" @click="remove(row)">删除</el-button>
+          <el-button v-if="isAdmin" link type="danger" @click="remove(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -101,11 +101,20 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import http from '../api/http'
 import ElderSelect from '../components/ElderSelect.vue'
+import { useUserStore } from '../stores/user'
 import { required } from '../utils/validators'
+
+const user = useUserStore()
+const isAdmin = computed(() => user.profile?.role === 'ADMIN')
+const alertTitle = computed(() =>
+  isAdmin.value
+    ? '新建老人档案时系统会自动开户。补建、删除账户仅管理员可操作；删除为彻底删除，删除后可再次为该老人新建账户。'
+    : '新建老人档案时系统会自动开户。删除与手动新建账户仅系统管理员可操作；您可在此查看并编辑（余额、状态等）有权限的账户。'
+)
 
 const loading = ref(false)
 const saving = ref(false)
@@ -187,7 +196,11 @@ async function save() {
 
 async function remove(row) {
   try {
-    await ElMessageBox.confirm('确定删除该老人账户？若与账务联动请谨慎操作。', '删除确认', { type: 'warning' })
+    await ElMessageBox.confirm(
+      '确定彻底删除该老人账户？删除后 elder_id 将释放，可再次新建；请确认账务已结清。',
+      '删除确认',
+      { type: 'warning' }
+    )
   } catch {
     return
   }
