@@ -48,6 +48,9 @@
           </el-button>
           <span v-if="pageTitle" class="page-title">{{ pageTitle }}</span>
         </div>
+        <div class="header-center">
+          <GlobalSearch />
+        </div>
         <div class="header-right">
           <span class="welcome">
             {{ user.profile?.realName || user.profile?.username }}
@@ -70,6 +73,7 @@ import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Menu } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
+import GlobalSearch from '../components/GlobalSearch.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -165,12 +169,19 @@ function logout() {
   border-bottom: 1px solid #ebeef5;
   background: #fff;
   min-width: 0;
+  padding: 0 16px;
 }
 .header-left {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  flex-shrink: 0;
+}
+.header-center {
+  flex: 1;
+  max-width: 420px;
+  margin: 0 20px;
 }
 .menu-btn {
   color: var(--app-primary, #1a5f7a);
@@ -214,5 +225,10 @@ function logout() {
 .side-drawer .el-drawer__body {
   padding: 0 !important;
   background: #1a5f7a;
+}
+@media (max-width: 768px) {
+  .header-center {
+    display: none;
+  }
 }
 </style>
