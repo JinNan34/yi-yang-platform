@@ -15,6 +15,30 @@
       <el-form-item label="系统角色" prop="role">
         <el-input :model-value="roleLabel" disabled readonly />
       </el-form-item>
+      <el-form-item label="头像" prop="avatar">
+        <div class="avatar-upload">
+          <el-avatar :size="120" :src="avatarUrl" class="avatar-preview">
+            <User />
+          </el-avatar>
+          <div class="upload-btn">
+            <el-upload
+              class="avatar-uploader"
+              action="/api/me/avatar"
+              :show-file-list="false"
+              :headers="uploadHeaders"
+              :before-upload="beforeAvatarUpload"
+              :on-success="handleAvatarSuccess"
+              :on-error="handleAvatarError"
+            >
+              <el-button size="small" type="primary" :loading="uploading">
+                <Upload />
+                {{ uploading ? '上传中...' : '更换头像' }}
+              </el-button>
+            </el-upload>
+          </div>
+          <p class="upload-tip">支持 jpg、jpeg、png、gif、webp 格式，建议尺寸 120x120</p>
+        </div>
+      </el-form-item>
       <el-form-item label="姓名" prop="realName">
         <el-input v-model="form.realName" placeholder="真实姓名" maxlength="30" show-word-limit clearable />
       </el-form-item>
@@ -26,9 +50,6 @@
       </el-form-item>
       <el-form-item label="电话" prop="phone">
         <el-input v-model="form.phone" placeholder="11 位手机号" maxlength="11" clearable />
-      </el-form-item>
-      <el-form-item label="头像URL" prop="avatar">
-        <el-input v-model="form.avatar" placeholder="可选，图片完整地址" maxlength="500" show-word-limit clearable />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" :loading="savingProfile" @click="saveProfile">保存资料</el-button>
@@ -63,6 +84,7 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { User, Upload } from '@element-plus/icons-vue'
 import http from '../api/http'
 import { useUserStore } from '../stores/user'
 import { MOBILE_PATTERN } from '../utils/validators'
@@ -72,6 +94,7 @@ const user = useUserStore()
 const loading = ref(false)
 const savingProfile = ref(false)
 const savingPwd = ref(false)
+const uploading = ref(false)
 const profileRef = ref()
 const pwdRef = ref()
 
@@ -92,6 +115,18 @@ const roleLabel = computed(() => {
   if (form.role === 'DEPT_HEAD') return '科室负责人'
   if (form.role === 'DOCTOR') return '医生'
   return form.role || '—'
+})
+
+const avatarUrl = computed(() => {
+  if (!form.avatar) return ''
+  if (form.avatar.startsWith('http')) return form.avatar
+  return form.avatar
+})
+
+const uploadHeaders = computed(() => {
+  return {
+    Authorization: 'Bearer ' + user.token
+  }
 })
 
 const profileRules = {
@@ -129,6 +164,39 @@ async function fetchProfile() {
   } finally {
     loading.value = false
   }
+}
+
+function beforeAvatarUpload(file) {
+  const isImage = file.type.startsWith('image/')
+  const isLt2M = file.size / 1024 / 1024 < 2
+  
+  if (!isImage) {
+    ElMessage.error('请上传图片格式文件')
+    return false
+  }
+  if (!isLt2M) {
+    ElMessage.error('图片大小不能超过 2MB')
+    return false
+  }
+  
+  uploading.value = true
+  return true
+}
+
+function handleAvatarSuccess(response) {
+  uploading.value = false
+  if (response.code === 0) {
+    form.avatar = response.data.url
+    user.setSession(user.token, form)
+    ElMessage.success('头像上传成功')
+  } else {
+    ElMessage.error(response.message || '头像上传失败')
+  }
+}
+
+function handleAvatarError() {
+  uploading.value = false
+  ElMessage.error('头像上传失败')
 }
 
 async function saveProfile() {
@@ -182,5 +250,26 @@ onMounted(fetchProfile)
 h3 {
   margin: 0;
   color: #1a5f7a;
+}
+
+.avatar-upload {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.avatar-preview {
+  border: 2px solid #e4e7ed;
+  border-radius: 50%;
+}
+
+.upload-btn {
+  margin-top: 8px;
+}
+
+.upload-tip {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: #909399;
 }
 </style>
