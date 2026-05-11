@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import jakarta.validation.constraints.Pattern;
 import java.time.LocalDateTime;
 
 @Data
@@ -19,6 +20,7 @@ public class Doctor {
     private String realName;
     private String title;
     private String department;
+    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确")
     private String phone;
     private String avatar;
     /** DOCTOR | DEPT_HEAD | ADMIN */

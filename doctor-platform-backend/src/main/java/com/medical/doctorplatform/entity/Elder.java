@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import jakarta.validation.constraints.Pattern;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -21,9 +22,11 @@ public class Elder {
     private String idCard;
     private Integer gender;
     private LocalDate birthDate;
+    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "老人手机号格式不正确")
     private String phone;
     private String address;
     private String emergencyContact;
+    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "紧急联系人手机号格式不正确")
     private String emergencyPhone;
     private String remark;
     @TableLogic

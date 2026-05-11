@@ -38,6 +38,23 @@ export function idCard18(_rule, value, callback) {
   callback()
 }
 
+export function optionalIdCard18(_rule, value, callback) {
+  const v = (value == null ? '' : String(value)).trim().toUpperCase()
+  if (!v) {
+    callback()
+    return
+  }
+  if (v.length !== 18) {
+    callback(new Error('身份证号应为 18 位'))
+    return
+  }
+  if (!ID_CARD_18.test(v)) {
+    callback(new Error('身份证号格式不正确'))
+    return
+  }
+  callback()
+}
+
 /** 收缩压应大于等于舒张压（两字段均有值时校验） */
 export function bloodPressurePair(form) {
   return (_rule, _value, callback) => {

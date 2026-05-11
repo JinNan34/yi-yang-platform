@@ -47,21 +47,22 @@
       width="560px"
       destroy-on-close
       @closed="resetForm"
+      @open="onDialogOpen"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="form.name" placeholder="与身份证一致为佳" maxlength="30" show-word-limit clearable />
+        <el-form-item label="姓名 <span class='required'>*</span>" prop="name">
+          <el-input ref="nameInputRef" v-model="form.name" placeholder="与身份证一致为佳" maxlength="30" show-word-limit clearable />
         </el-form-item>
         <el-form-item label="身份证" prop="idCard">
-          <el-input v-model="form.idCard" placeholder="18 位，末位可为 X" maxlength="18" clearable />
+          <el-input v-model="form.idCard" placeholder="18 位，末位可为 X（选填）" maxlength="18" clearable />
         </el-form-item>
-        <el-form-item label="性别" prop="gender">
+        <el-form-item label="性别 <span class='required'>*</span>" prop="gender">
           <el-radio-group v-model="form.gender">
             <el-radio :label="1">男</el-radio>
             <el-radio :label="0">女</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="出生日期" prop="birthDate">
+        <el-form-item label="出生日期 <span class='required'>*</span>" prop="birthDate">
           <el-date-picker
             v-model="form.birthDate"
             type="date"
@@ -71,16 +72,16 @@
             :disabled-date="birthDisabledFuture"
           />
         </el-form-item>
-        <el-form-item label="本人电话" prop="phone">
+        <el-form-item label="本人电话 <span class='required'>*</span>" prop="phone">
           <el-input v-model="form.phone" placeholder="11 位手机号" maxlength="11" clearable />
         </el-form-item>
-        <el-form-item label="住址" prop="address">
+        <el-form-item label="住址">
           <el-input v-model="form.address" type="textarea" :rows="2" placeholder="现居住地址" maxlength="200" show-word-limit />
         </el-form-item>
-        <el-form-item label="紧急联系人" prop="emergencyContact">
+        <el-form-item label="紧急联系人 <span class='required'>*</span>" prop="emergencyContact">
           <el-input v-model="form.emergencyContact" placeholder="家属姓名" maxlength="30" clearable />
         </el-form-item>
-        <el-form-item label="紧急联系电话" prop="emergencyPhone">
+        <el-form-item label="紧急联系电话 <span class='required'>*</span>" prop="emergencyPhone">
           <el-input v-model="form.emergencyPhone" placeholder="11 位手机号" maxlength="11" clearable />
         </el-form-item>
       </el-form>
@@ -93,10 +94,10 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, nextTick } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import http from '../api/http'
-import { required, optionalMobile, idCard18, MOBILE_PATTERN } from '../utils/validators'
+import { required, optionalMobile, optionalIdCard18, MOBILE_PATTERN } from '../utils/validators'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -106,11 +107,12 @@ const query = reactive({ name: '' })
 const table = reactive({ records: [], total: 0 })
 const visible = ref(false)
 const formRef = ref()
+const nameInputRef = ref()
 const form = reactive({
   id: null,
   name: '',
   idCard: '',
-  gender: 1,
+  gender: null,
   birthDate: '',
   phone: '',
   address: '',
@@ -120,13 +122,18 @@ const form = reactive({
 
 const rules = {
   name: required('请输入姓名'),
-  idCard: [{ validator: idCard18, trigger: 'blur' }],
+  idCard: [{ validator: optionalIdCard18, trigger: 'blur' }],
+  gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
   birthDate: required('请选择出生日期', 'change'),
   phone: [
     { required: true, message: '请输入本人电话', trigger: 'blur' },
     { pattern: MOBILE_PATTERN, message: '请输入 11 位手机号', trigger: 'blur' }
   ],
-  emergencyPhone: [{ validator: optionalMobile, trigger: 'blur' }]
+  emergencyContact: required('请输入紧急联系人'),
+  emergencyPhone: [
+    { required: true, message: '请输入紧急联系电话', trigger: 'blur' },
+    { pattern: MOBILE_PATTERN, message: '请输入 11 位手机号', trigger: 'blur' }
+  ]
 }
 
 function birthDisabledFuture(d) {
@@ -155,12 +162,18 @@ function resetForm() {
     id: null,
     name: '',
     idCard: '',
-    gender: 1,
+    gender: null,
     birthDate: '',
     phone: '',
     address: '',
     emergencyContact: '',
     emergencyPhone: ''
+  })
+}
+
+function onDialogOpen() {
+  nextTick(() => {
+    nameInputRef.value?.focus?.()
   })
 }
 
@@ -171,9 +184,13 @@ function openEdit(row) {
 }
 
 async function save() {
+  let isValid = true
   try {
     await formRef.value?.validate()
   } catch {
+    isValid = false
+  }
+  if (!isValid) {
     ElMessage.warning('请检查表单标红项')
     return
   }
@@ -224,5 +241,8 @@ onMounted(load)
 }
 .wfull {
   width: 100%;
+}
+.required {
+  color: #f56c6c;
 }
 </style>
