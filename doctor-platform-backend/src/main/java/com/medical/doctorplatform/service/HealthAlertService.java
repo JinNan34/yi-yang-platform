@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,11 +20,17 @@ import java.time.LocalDateTime;
 public class HealthAlertService {
 
     private final HealthAlertMapper healthAlertMapper;
+    private final ElderLookupService elderLookup;
     private final RecordPermissionService permissionService;
 
-    public IPage<HealthAlert> page(long page, long size, Long elderId, Integer status) {
+    public IPage<HealthAlert> page(long page, long size, Long elderId, String elderName, Integer status) {
         Page<HealthAlert> p = new Page<>(page, size);
         LambdaQueryWrapper<HealthAlert> w = new LambdaQueryWrapper<>();
+        Optional<List<Long>> nameFilter = elderLookup.resolveElderIdsForNameQuery(elderName);
+        if (nameFilter.isPresent() && nameFilter.get().isEmpty()) {
+            return elderLookup.emptyPage(page, size);
+        }
+        nameFilter.ifPresent(ids -> w.in(HealthAlert::getElderId, ids));
         if (elderId != null) {
             w.eq(HealthAlert::getElderId, elderId);
         }
@@ -30,7 +38,9 @@ public class HealthAlertService {
             w.eq(HealthAlert::getStatus, status);
         }
         w.orderByDesc(HealthAlert::getCreateTime);
-        return healthAlertMapper.selectPage(p, w);
+        IPage<HealthAlert> result = healthAlertMapper.selectPage(p, w);
+        elderLookup.fillElderNames(result.getRecords(), HealthAlert::getElderId, HealthAlert::setElderName);
+        return result;
     }
 
     public HealthAlert getById(Long id) {

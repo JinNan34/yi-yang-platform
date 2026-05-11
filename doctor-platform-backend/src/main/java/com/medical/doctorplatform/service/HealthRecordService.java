@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,16 +20,24 @@ import java.time.LocalDateTime;
 public class HealthRecordService {
 
     private final HealthRecordMapper healthRecordMapper;
+    private final ElderLookupService elderLookup;
     private final RecordPermissionService permissionService;
 
-    public IPage<HealthRecord> page(long page, long size, Long elderId) {
+    public IPage<HealthRecord> page(long page, long size, Long elderId, String elderName) {
         Page<HealthRecord> p = new Page<>(page, size);
         LambdaQueryWrapper<HealthRecord> w = new LambdaQueryWrapper<>();
+        Optional<List<Long>> nameFilter = elderLookup.resolveElderIdsForNameQuery(elderName);
+        if (nameFilter.isPresent() && nameFilter.get().isEmpty()) {
+            return elderLookup.emptyPage(page, size);
+        }
+        nameFilter.ifPresent(ids -> w.in(HealthRecord::getElderId, ids));
         if (elderId != null) {
             w.eq(HealthRecord::getElderId, elderId);
         }
         w.orderByDesc(HealthRecord::getRecordTime);
-        return healthRecordMapper.selectPage(p, w);
+        IPage<HealthRecord> result = healthRecordMapper.selectPage(p, w);
+        elderLookup.fillElderNames(result.getRecords(), HealthRecord::getElderId, HealthRecord::setElderName);
+        return result;
     }
 
     public HealthRecord getById(Long id) {
@@ -44,7 +54,7 @@ public class HealthRecordService {
             record.setRecordTime(LocalDateTime.now());
         }
         healthRecordMapper.insert(record);
-        log.info("创建健康记录: id={}, elderId={}, doctorId={}", 
+        log.info("创建健康记录: id={}, elderId={}, doctorId={}",
                 record.getId(), record.getElderId(), record.getDoctorId());
         return record;
     }
@@ -52,7 +62,7 @@ public class HealthRecordService {
     public void update(Long id, HealthRecord record) {
         HealthRecord existing = getById(id);
         permissionService.assertCanModifyClinicalRecord(existing.getDoctorId());
-        
+
         record.setId(id);
         record.setDoctorId(existing.getDoctorId());
         healthRecordMapper.updateById(record);
@@ -62,7 +72,7 @@ public class HealthRecordService {
     public void delete(Long id) {
         HealthRecord existing = getById(id);
         permissionService.assertCanModifyClinicalRecord(existing.getDoctorId());
-        
+
         healthRecordMapper.deleteById(id);
         log.info("删除健康记录: id={}", id);
     }
@@ -72,6 +82,8 @@ public class HealthRecordService {
         LambdaQueryWrapper<HealthRecord> w = new LambdaQueryWrapper<>();
         w.eq(HealthRecord::getElderId, elderId);
         w.orderByDesc(HealthRecord::getRecordTime);
-        return healthRecordMapper.selectPage(p, w);
+        IPage<HealthRecord> result = healthRecordMapper.selectPage(p, w);
+        elderLookup.fillElderNames(result.getRecords(), HealthRecord::getElderId, HealthRecord::setElderName);
+        return result;
     }
 }

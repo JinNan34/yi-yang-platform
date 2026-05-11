@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,11 +20,17 @@ import java.time.LocalDateTime;
 public class FollowupInterventionService {
 
     private final FollowupInterventionRecordMapper followupInterventionRecordMapper;
+    private final ElderLookupService elderLookup;
     private final RecordPermissionService permissionService;
 
-    public IPage<FollowupInterventionRecord> page(long page, long size, Long elderId, Long followupId) {
+    public IPage<FollowupInterventionRecord> page(long page, long size, Long elderId, String elderName, Long followupId) {
         Page<FollowupInterventionRecord> p = new Page<>(page, size);
         LambdaQueryWrapper<FollowupInterventionRecord> w = new LambdaQueryWrapper<>();
+        Optional<List<Long>> nameFilter = elderLookup.resolveElderIdsForNameQuery(elderName);
+        if (nameFilter.isPresent() && nameFilter.get().isEmpty()) {
+            return elderLookup.emptyPage(page, size);
+        }
+        nameFilter.ifPresent(ids -> w.in(FollowupInterventionRecord::getElderId, ids));
         if (elderId != null) {
             w.eq(FollowupInterventionRecord::getElderId, elderId);
         }
@@ -30,7 +38,9 @@ public class FollowupInterventionService {
             w.eq(FollowupInterventionRecord::getFollowupId, followupId);
         }
         w.orderByDesc(FollowupInterventionRecord::getInterventionTime);
-        return followupInterventionRecordMapper.selectPage(p, w);
+        IPage<FollowupInterventionRecord> result = followupInterventionRecordMapper.selectPage(p, w);
+        elderLookup.fillElderNames(result.getRecords(), FollowupInterventionRecord::getElderId, FollowupInterventionRecord::setElderName);
+        return result;
     }
 
     public FollowupInterventionRecord getById(Long id) {

@@ -1,6 +1,7 @@
 package com.medical.doctorplatform.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -16,6 +17,8 @@ public class FollowupInterventionRecord {
     private Long id;
     private Long followupId;
     private Long elderId;
+    @TableField(exist = false)
+    private String elderName;
     private Long doctorId;
     private String interventionType;
     private String content;

@@ -1,6 +1,7 @@
 package com.medical.doctorplatform.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -16,6 +17,9 @@ public class HealthRecord {
     @TableId(type = IdType.AUTO)
     private Long id;
     private Long elderId;
+    /** 列表展示用，非表字段 */
+    @TableField(exist = false)
+    private String elderName;
     private Long doctorId;
     private Integer systolicBp;
     private Integer diastolicBp;

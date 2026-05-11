@@ -3,6 +3,9 @@ package com.medical.doctorplatform.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+
+import java.util.List;
+import java.util.Optional;
 import com.medical.doctorplatform.entity.Elder;
 import com.medical.doctorplatform.entity.ElderAccount;
 import com.medical.doctorplatform.mapper.ElderAccountMapper;
@@ -18,16 +21,24 @@ public class ElderAccountService {
 
     private final ElderAccountMapper elderAccountMapper;
     private final ElderMapper elderMapper;
+    private final ElderLookupService elderLookup;
     private final RecordPermissionService permissionService;
 
-    public IPage<ElderAccount> page(long page, long size, Long elderId) {
+    public IPage<ElderAccount> page(long page, long size, Long elderId, String elderName) {
         Page<ElderAccount> p = new Page<>(page, size);
         LambdaQueryWrapper<ElderAccount> w = new LambdaQueryWrapper<>();
+        java.util.Optional<java.util.List<Long>> nameFilter = elderLookup.resolveElderIdsForNameQuery(elderName);
+        if (nameFilter.isPresent() && nameFilter.get().isEmpty()) {
+            return elderLookup.emptyPage(page, size);
+        }
+        nameFilter.ifPresent(ids -> w.in(ElderAccount::getElderId, ids));
         if (elderId != null) {
             w.eq(ElderAccount::getElderId, elderId);
         }
         w.orderByDesc(ElderAccount::getCreateTime);
-        return elderAccountMapper.selectPage(p, w);
+        com.baomidou.mybatisplus.core.metadata.IPage<ElderAccount> result = elderAccountMapper.selectPage(p, w);
+        elderLookup.fillElderNames(result.getRecords(), ElderAccount::getElderId, ElderAccount::setElderName);
+        return result;
     }
 
     public ElderAccount getById(Long id) {
