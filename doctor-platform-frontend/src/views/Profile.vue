@@ -84,6 +84,7 @@ import { ElMessage } from 'element-plus'
 import { User, Upload } from '@element-plus/icons-vue'
 import http from '../api/http'
 import { useUserStore } from '../stores/user'
+import { resolvePublicUrl } from '../utils/resolvePublicUrl'
 import { MOBILE_PATTERN } from '../utils/validators'
 
 const router = useRouter()
@@ -115,11 +116,7 @@ const roleLabel = computed(() => {
   return form.role || '—'
 })
 
-const avatarUrl = computed(() => {
-  if (!form.avatar) return ''
-  if (form.avatar.startsWith('http')) return form.avatar
-  return form.avatar
-})
+const avatarUrl = computed(() => resolvePublicUrl(form.avatar))
 
 const profileRules = {
   realName: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
@@ -184,25 +181,18 @@ async function handleFileChange(event) {
     const formData = new FormData()
     formData.append('file', file)
     
-    const response = await fetch('/api/me/avatar', {
-      method: 'POST',
+    const response = await http.post('/me/avatar', formData, {
       headers: {
-        'Authorization': 'Bearer ' + user.token
-      },
-      body: formData
+        'Content-Type': 'multipart/form-data'
+      }
     })
     
-    const result = await response.json()
+    form.avatar = response.url
+    user.setSession(user.token, form)
+    ElMessage.success('头像上传成功')
     
-    if (result.code === 0) {
-      form.avatar = result.data.url
-      user.setSession(user.token, form)
-      ElMessage.success('头像上传成功')
-    } else {
-      ElMessage.error(result.message || '头像上传失败')
-    }
-  } catch (error) {
-    ElMessage.error('头像上传失败：' + error.message)
+  } catch {
+    /* 错误提示由 http 拦截器统一处理，避免重复弹窗 */
   } finally {
     uploading.value = false
     event.target.value = ''

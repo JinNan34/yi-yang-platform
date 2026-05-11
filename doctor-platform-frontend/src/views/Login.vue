@@ -25,9 +25,10 @@
             maxlength="64"
           />
         </el-form-item>
+        <p v-if="loginHint" class="login-error" role="alert">{{ loginHint }}</p>
         <el-button type="primary" native-type="submit" class="full" :loading="loading">登录</el-button>
       </el-form>
-      <p class="hint">
+      <p v-if="isDev" class="hint">
         演示账号（密码均为 123456）：<br />
         doctor — 普通医生；depthead — 科室负责人；admin — 系统管理员
       </p>
@@ -36,25 +37,35 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import http from '../api/http'
 import { useUserStore } from '../stores/user'
+import { safeRedirectPath } from '../utils/safeRedirect'
+
+const isDev = import.meta.env.DEV
 
 const router = useRouter()
 const route = useRoute()
 const user = useUserStore()
 const loading = ref(false)
+const loginHint = ref('')
 const formRef = ref()
-const form = reactive({ username: 'doctor', password: '123456' })
+const form = reactive({
+  username: isDev ? 'doctor' : '',
+  password: isDev ? '123456' : ''
+})
 
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
+const redirectTarget = computed(() => safeRedirectPath(route.query.redirect))
+
 async function onSubmit() {
+  loginHint.value = ''
   try {
     await formRef.value?.validate()
   } catch {
@@ -66,8 +77,11 @@ async function onSubmit() {
     const data = await http.post('/auth/login', { ...form })
     user.setSession(data.token, data.doctor)
     ElMessage.success('登录成功')
-    const redirect = route.query.redirect || '/'
-    router.push(redirect)
+    await router.push(redirectTarget.value)
+  } catch (err) {
+    if (!err.response) {
+      loginHint.value = '无法连接服务器，请检查网络或后端是否已启动'
+    }
   } finally {
     loading.value = false
   }
@@ -83,12 +97,12 @@ async function onSubmit() {
   background: linear-gradient(135deg, #1a5f7a 0%, #159895 100%);
 }
 .login-card {
-  width: 400px;
+  width: min(400px, 92vw);
 }
 .title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1a5f7a;
+  color: var(--app-primary, #1a5f7a);
 }
 .sub {
   font-size: 0.85rem;
@@ -105,5 +119,11 @@ async function onSubmit() {
   color: #909399;
   text-align: center;
   line-height: 1.5;
+}
+.login-error {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #f56c6c;
+  line-height: 1.4;
 }
 </style>

@@ -39,9 +39,6 @@ public class ProfileController {
     private final DoctorMapper doctorMapper;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${server.servlet.context-path:/api}")
-    private String contextPath;
-
     @Value("${file.upload-dir:./uploads}")
     private String uploadDir;
 
@@ -88,7 +85,8 @@ public class ProfileController {
             
             Files.copy(file.getInputStream(), filePath);
             
-            String avatarUrl = contextPath + "/files/" + newFilename;
+            // 与 FileController `/api/files/{filename}` 一致；勿用 `contextPath + "/files/"`，在 context-path 为 `/` 时会变成 `//files/...` 被浏览器当作协议相对 URL
+            String avatarUrl = "/api/files/" + newFilename;
             
             doctorMapper.update(null, new LambdaUpdateWrapper<Doctor>()
                     .eq(Doctor::getId, SecurityUtils.currentDoctorId())

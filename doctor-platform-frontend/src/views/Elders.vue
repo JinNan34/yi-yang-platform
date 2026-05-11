@@ -35,11 +35,13 @@
     <el-pagination
       class="pager"
       background
-      layout="total, prev, pager, next"
+      layout="total, sizes, prev, pager, next, jumper"
       :total="table.total"
       v-model:current-page="page"
-      :page-size="size"
+      v-model:page-size="size"
+      :page-sizes="[10, 20, 50]"
       @current-change="load"
+      @size-change="onSizeChange"
     />
     <el-dialog
       v-model="visible"
@@ -50,19 +52,22 @@
       @open="onDialogOpen"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
-        <el-form-item label="姓名 <span class='required'>*</span>" prop="name">
+        <el-form-item prop="name">
+          <template #label>姓名 <span class="required">*</span></template>
           <el-input ref="nameInputRef" v-model="form.name" placeholder="与身份证一致为佳" maxlength="30" show-word-limit clearable />
         </el-form-item>
         <el-form-item label="身份证" prop="idCard">
           <el-input v-model="form.idCard" placeholder="18 位，末位可为 X（选填）" maxlength="18" clearable />
         </el-form-item>
-        <el-form-item label="性别 <span class='required'>*</span>" prop="gender">
+        <el-form-item prop="gender">
+          <template #label>性别 <span class="required">*</span></template>
           <el-radio-group v-model="form.gender">
             <el-radio :label="1">男</el-radio>
             <el-radio :label="0">女</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="出生日期 <span class='required'>*</span>" prop="birthDate">
+        <el-form-item prop="birthDate">
+          <template #label>出生日期 <span class="required">*</span></template>
           <el-date-picker
             v-model="form.birthDate"
             type="date"
@@ -72,16 +77,19 @@
             :disabled-date="birthDisabledFuture"
           />
         </el-form-item>
-        <el-form-item label="本人电话 <span class='required'>*</span>" prop="phone">
+        <el-form-item prop="phone">
+          <template #label>本人电话 <span class="required">*</span></template>
           <el-input v-model="form.phone" placeholder="11 位手机号" maxlength="11" clearable />
         </el-form-item>
         <el-form-item label="住址">
           <el-input v-model="form.address" type="textarea" :rows="2" placeholder="现居住地址" maxlength="200" show-word-limit />
         </el-form-item>
-        <el-form-item label="紧急联系人 <span class='required'>*</span>" prop="emergencyContact">
+        <el-form-item prop="emergencyContact">
+          <template #label>紧急联系人 <span class="required">*</span></template>
           <el-input v-model="form.emergencyContact" placeholder="家属姓名" maxlength="30" clearable />
         </el-form-item>
-        <el-form-item label="紧急联系电话 <span class='required'>*</span>" prop="emergencyPhone">
+        <el-form-item prop="emergencyPhone">
+          <template #label>紧急联系电话 <span class="required">*</span></template>
           <el-input v-model="form.emergencyPhone" placeholder="11 位手机号" maxlength="11" clearable />
         </el-form-item>
       </el-form>
@@ -102,7 +110,12 @@ import { required, optionalMobile, optionalIdCard18, MOBILE_PATTERN } from '../u
 const loading = ref(false)
 const saving = ref(false)
 const page = ref(1)
-const size = 10
+const size = ref(10)
+
+function onSizeChange() {
+  page.value = 1
+  load()
+}
 const query = reactive({ name: '' })
 const table = reactive({ records: [], total: 0 })
 const visible = ref(false)
@@ -143,7 +156,7 @@ function birthDisabledFuture(d) {
 async function load() {
   loading.value = true
   try {
-    const data = await http.get('/elders', { params: { page: page.value, size, name: query.name || undefined } })
+    const data = await http.get('/elders', { params: { page: page.value, size: size.value, name: query.name || undefined } })
     table.records = data.records || []
     table.total = data.total || 0
   } finally {
