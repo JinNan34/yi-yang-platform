@@ -12,6 +12,7 @@ import com.medical.doctorplatform.mapper.ElderAccountMapper;
 import com.medical.doctorplatform.mapper.ElderMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -65,7 +66,20 @@ public class ElderAccountService {
             throw new IllegalArgumentException("老人不存在");
         }
         permissionService.assertCanModifyElder(elder);
-        elderAccountMapper.insert(account);
+        long exists = elderAccountMapper.selectCount(
+                new LambdaQueryWrapper<ElderAccount>().eq(ElderAccount::getElderId, account.getElderId()));
+        if (exists > 0) {
+            throw new IllegalArgumentException("该老人已有账户（每位老人仅允许一条账户记录），请在列表中编辑现有账户，勿重复新建。");
+        }
+        try {
+            elderAccountMapper.insert(account);
+        } catch (DataIntegrityViolationException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Duplicate entry")) {
+                throw new IllegalArgumentException(
+                        "该老人已绑定账户（elder_id 全局唯一）。若列表中看不到，可能是历史已删记录仍占用唯一键，请联系管理员或改用「编辑」已有账户。", e);
+            }
+            throw e;
+        }
         log.info("创建老人账户: id={}, elderId={}", account.getId(), account.getElderId());
         return account;
     }
