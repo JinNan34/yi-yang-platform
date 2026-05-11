@@ -48,7 +48,7 @@
           </el-button>
           <span v-if="pageTitle" class="page-title">{{ pageTitle }}</span>
         </div>
-        <div class="header-center">
+        <div class="header-center" v-if="showSearch">
           <GlobalSearch />
         </div>
         <div class="header-right">
@@ -80,6 +80,10 @@ const router = useRouter()
 const user = useUserStore()
 const active = computed(() => route.path)
 const pageTitle = computed(() => route.meta?.title || '')
+const showSearch = computed(() => {
+  const searchPaths = ['/', '/elders']
+  return searchPaths.includes(route.path) && !isMobile.value
+})
 
 const isMobile = ref(false)
 const drawerVisible = ref(false)
