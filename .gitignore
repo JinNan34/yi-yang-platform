@@ -1,0 +1,16 @@
+# 后端忽略
+.idea/
+*.iml
+target/
+logs/
+*.log
+application-dev.yml
+application-prod.yml
+
+# 前端忽略
+node_modules/
+dist/
+.env
+
+# 系统文件
+.DS_Store
