@@ -93,16 +93,20 @@ public class ElderAccountService {
     }
 
     public void update(Long id, ElderAccount account) {
+        LoginUser me = SecurityUtils.currentUser();
+        if (!DoctorRole.isAdmin(me.getDoctor().getRole())) {
+            throw new ForbiddenOperationException("仅系统管理员可编辑老人账户；医生与科室负责人无编辑权限。");
+        }
         ElderAccount existing = getById(id);
         Elder elder = elderMapper.selectById(existing.getElderId());
         if (elder == null) {
             throw new IllegalArgumentException("关联老人不存在");
         }
         permissionService.assertCanModifyElder(elder);
-        
+
         account.setId(id);
         elderAccountMapper.updateById(account);
-        log.info("更新老人账户: id={}, balance={}", id, account.getBalance());
+        log.info("更新老人账户: id={}, balance={}, operator={}", id, account.getBalance(), me.getDoctorId());
     }
 
     public void delete(Long id) {

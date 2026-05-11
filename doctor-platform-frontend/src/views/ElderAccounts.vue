@@ -46,7 +46,7 @@
       </el-table-column>
       <el-table-column label="操作" width="140" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+          <el-button v-if="isAdmin" link type="primary" @click="openEdit(row)">编辑</el-button>
           <el-button v-if="isAdmin" link type="danger" @click="remove(row)">删除</el-button>
         </template>
       </el-table-column>
@@ -112,8 +112,8 @@ const user = useUserStore()
 const isAdmin = computed(() => user.profile?.role === 'ADMIN')
 const alertTitle = computed(() =>
   isAdmin.value
-    ? '新建老人档案时系统会自动开户。补建、删除账户仅管理员可操作；删除为彻底删除，删除后可再次为该老人新建账户。'
-    : '新建老人档案时系统会自动开户。删除与手动新建账户仅系统管理员可操作；您可在此查看并编辑（余额、状态等）有权限的账户。'
+    ? '新建老人档案时系统会自动开户。补建、编辑、删除账户仅管理员可操作；删除为彻底删除，删除后可再次为该老人新建账户。'
+    : '新建老人档案时系统会自动开户。补建、编辑、删除账户仅系统管理员可操作；您可在此查询与浏览账户列表。'
 )
 
 const loading = ref(false)
