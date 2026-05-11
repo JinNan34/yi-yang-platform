@@ -21,20 +21,17 @@
             <User />
           </el-avatar>
           <div class="upload-btn">
-            <el-upload
-              class="avatar-uploader"
-              action="/api/me/avatar"
-              :show-file-list="false"
-              :headers="uploadHeaders"
-              :before-upload="beforeAvatarUpload"
-              :on-success="handleAvatarSuccess"
-              :on-error="handleAvatarError"
-            >
-              <el-button size="small" type="primary" :loading="uploading">
-                <Upload />
-                {{ uploading ? '上传中...' : '更换头像' }}
-              </el-button>
-            </el-upload>
+            <el-button size="small" type="primary" :loading="uploading" @click="triggerUpload">
+              <Upload />
+              {{ uploading ? '上传中...' : '更换头像' }}
+            </el-button>
+            <input
+              ref="fileInputRef"
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              class="file-input"
+              @change="handleFileChange"
+            />
           </div>
           <p class="upload-tip">支持 jpg、jpeg、png、gif、webp 格式，建议尺寸 120x120</p>
         </div>
@@ -97,6 +94,7 @@ const savingPwd = ref(false)
 const uploading = ref(false)
 const profileRef = ref()
 const pwdRef = ref()
+const fileInputRef = ref()
 
 const form = reactive({
   username: '',
@@ -121,12 +119,6 @@ const avatarUrl = computed(() => {
   if (!form.avatar) return ''
   if (form.avatar.startsWith('http')) return form.avatar
   return form.avatar
-})
-
-const uploadHeaders = computed(() => {
-  return {
-    Authorization: 'Bearer ' + user.token
-  }
 })
 
 const profileRules = {
@@ -166,37 +158,55 @@ async function fetchProfile() {
   }
 }
 
-function beforeAvatarUpload(file) {
+function triggerUpload() {
+  fileInputRef.value?.click()
+}
+
+async function handleFileChange(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
   const isImage = file.type.startsWith('image/')
   const isLt2M = file.size / 1024 / 1024 < 2
   
   if (!isImage) {
     ElMessage.error('请上传图片格式文件')
-    return false
+    return
   }
   if (!isLt2M) {
     ElMessage.error('图片大小不能超过 2MB')
-    return false
+    return
   }
-  
+
   uploading.value = true
-  return true
-}
-
-function handleAvatarSuccess(response) {
-  uploading.value = false
-  if (response.code === 0) {
-    form.avatar = response.data.url
-    user.setSession(user.token, form)
-    ElMessage.success('头像上传成功')
-  } else {
-    ElMessage.error(response.message || '头像上传失败')
+  
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const response = await fetch('/api/me/avatar', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + user.token
+      },
+      body: formData
+    })
+    
+    const result = await response.json()
+    
+    if (result.code === 0) {
+      form.avatar = result.data.url
+      user.setSession(user.token, form)
+      ElMessage.success('头像上传成功')
+    } else {
+      ElMessage.error(result.message || '头像上传失败')
+    }
+  } catch (error) {
+    ElMessage.error('头像上传失败：' + error.message)
+  } finally {
+    uploading.value = false
+    event.target.value = ''
   }
-}
-
-function handleAvatarError() {
-  uploading.value = false
-  ElMessage.error('头像上传失败')
 }
 
 async function saveProfile() {
@@ -265,6 +275,14 @@ h3 {
 
 .upload-btn {
   margin-top: 8px;
+  position: relative;
+}
+
+.file-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
 .upload-tip {
