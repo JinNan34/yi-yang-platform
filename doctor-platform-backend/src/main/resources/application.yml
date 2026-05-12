@@ -43,6 +43,8 @@ app:
   login:
     max-failures: ${LOGIN_MAX_FAILURES:5}
     lock-ttl-minutes: ${LOGIN_LOCK_TTL_MINUTES:15}
+  captcha:
+    ttl-minutes: ${CAPTCHA_TTL_MINUTES:5}
 
 file:
   upload-dir: ${FILE_UPLOAD_DIR:./uploads}

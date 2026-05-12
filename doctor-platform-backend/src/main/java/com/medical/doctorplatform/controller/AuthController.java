@@ -25,9 +25,13 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final LoginRateLimiter loginRateLimiter;
+    private final CaptchaController captchaController;
 
     @PostMapping("/login")
     public ApiResult<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        if (!captchaController.verify(request.getCaptchaKey(), request.getCaptchaCode())) {
+            throw new IllegalArgumentException("验证码错误或已过期");
+        }
         loginRateLimiter.checkBlockedOrThrow(request.getUsername());
         try {
             Authentication auth = authenticationManager.authenticate(
