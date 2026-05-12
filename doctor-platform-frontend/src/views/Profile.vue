@@ -165,38 +165,71 @@ async function handleFileChange(event) {
 
   const isImage = file.type.startsWith('image/')
   const isLt2M = file.size / 1024 / 1024 < 2
-  
+
   if (!isImage) {
     ElMessage.error('请上传图片格式文件')
+    event.target.value = ''
     return
   }
   if (!isLt2M) {
     ElMessage.error('图片大小不能超过 2MB')
+    event.target.value = ''
+    return
+  }
+
+  const valid = await checkAvatarDimensions(file)
+  if (!valid) {
+    event.target.value = ''
     return
   }
 
   uploading.value = true
-  
   try {
     const formData = new FormData()
     formData.append('file', file)
-    
+
     const response = await http.post('/me/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     })
-    
+
     form.avatar = response.url
     user.setSession(user.token, form)
     ElMessage.success('头像上传成功')
-    
   } catch {
     /* 错误提示由 http 拦截器统一处理，避免重复弹窗 */
   } finally {
     uploading.value = false
     event.target.value = ''
   }
+}
+
+function checkAvatarDimensions(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      if (img.width < 100 || img.height < 100) {
+        ElMessage.error('头像图片尺寸过小，请上传至少 100×100 的图片')
+        resolve(false)
+        return
+      }
+      if (img.width > 500 || img.height > 500) {
+        ElMessage.error('头像图片尺寸过大，请上传不超过 500×500 的图片')
+        resolve(false)
+        return
+      }
+      resolve(true)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      ElMessage.error('图片无法读取，请检查文件是否损坏')
+      resolve(false)
+    }
+    img.src = url
+  })
 }
 
 async function saveProfile() {

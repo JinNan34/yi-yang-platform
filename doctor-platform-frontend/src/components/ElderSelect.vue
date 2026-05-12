@@ -31,8 +31,7 @@ const options = ref([])
 const loading = ref(false)
 
 function formatLabel(e) {
-  const name = e.name || '未命名'
-  return `${name}（ID ${e.id}）`
+  return e.name || '未命名'
 }
 
 async function remoteSearch(query) {

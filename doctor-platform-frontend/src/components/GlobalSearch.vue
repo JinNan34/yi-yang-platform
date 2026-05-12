@@ -115,7 +115,7 @@ function handleClear() {
 function handleSelect(item) {
   keyword.value = ''
   showDropdown.value = false
-  router.push('/elders')
+  router.push({ path: '/elders', query: { name: item.name } })
 }
 
 function handleKeydown(e) {

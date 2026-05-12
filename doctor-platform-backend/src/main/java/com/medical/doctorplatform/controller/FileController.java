@@ -25,7 +25,7 @@ public class FileController {
     @Value("${file.upload-dir:./uploads}")
     private String uploadDir;
 
-    @GetMapping("/{filename}")
+    @GetMapping("/{filename:.+}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
         try {
             Path filePath = Paths.get(uploadDir).resolve(filename).normalize();

@@ -1,7 +1,9 @@
 package com.medical.doctorplatform.controller;
 
+import com.aliyun.oss.OSS;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.medical.doctorplatform.common.ApiResult;
+import com.medical.doctorplatform.config.OssConfig;
 import com.medical.doctorplatform.dto.LoginResponse;
 import com.medical.doctorplatform.dto.PasswordUpdateRequest;
 import com.medical.doctorplatform.entity.Doctor;
@@ -9,6 +11,7 @@ import com.medical.doctorplatform.mapper.DoctorMapper;
 import com.medical.doctorplatform.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.StringUtils;
@@ -42,6 +45,12 @@ public class ProfileController {
     @Value("${file.upload-dir:./uploads}")
     private String uploadDir;
 
+    @Autowired
+    private OssConfig ossConfig;
+
+    @Autowired(required = false)
+    private OSS ossClient;
+
     @GetMapping
     public ApiResult<LoginResponse.DoctorProfile> profile() {
         Doctor d = doctorMapper.selectById(SecurityUtils.currentDoctorId());
@@ -73,32 +82,39 @@ public class ProfileController {
             throw new IllegalArgumentException("只支持 jpg、jpeg、png、gif、webp 格式的图片");
         }
         
-        try {
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String newFilename = "avatar/" + SecurityUtils.currentDoctorId() + "/" + timestamp + "_" + UUID.randomUUID().toString().substring(0, 8) + "." + extension;
+        String avatarUrl;
+
+        if (ossClient != null && ossConfig.isConfigured()) {
+            try {
+                ossClient.putObject(ossConfig.getBucketName(), newFilename, file.getInputStream());
+                avatarUrl = ossConfig.getBaseUrl() + newFilename;
+            } catch (IOException e) {
+                throw new RuntimeException("文件上传到OSS失败", e);
             }
-            
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-            String newFilename = "avatar_" + SecurityUtils.currentDoctorId() + "_" + timestamp + "_" + UUID.randomUUID().toString().substring(0, 8) + "." + extension;
-            Path filePath = uploadPath.resolve(newFilename);
-            
-            Files.copy(file.getInputStream(), filePath);
-            
-            // 与 FileController `/api/files/{filename}` 一致；勿用 `contextPath + "/files/"`，在 context-path 为 `/` 时会变成 `//files/...` 被浏览器当作协议相对 URL
-            String avatarUrl = "/api/files/" + newFilename;
-            
-            doctorMapper.update(null, new LambdaUpdateWrapper<Doctor>()
-                    .eq(Doctor::getId, SecurityUtils.currentDoctorId())
-                    .set(Doctor::getAvatar, avatarUrl));
-            
-            Map<String, String> result = new HashMap<>();
-            result.put("url", avatarUrl);
-            return ApiResult.ok(result);
-            
-        } catch (IOException e) {
-            throw new RuntimeException("文件上传失败", e);
+        } else {
+            try {
+                Path uploadPath = Paths.get(uploadDir);
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
+                Path filePath = uploadPath.resolve(newFilename);
+                Files.createDirectories(filePath.getParent());
+                Files.copy(file.getInputStream(), filePath);
+                avatarUrl = "/api/files/" + newFilename;
+            } catch (IOException e) {
+                throw new RuntimeException("文件上传失败", e);
+            }
         }
+
+        doctorMapper.update(null, new LambdaUpdateWrapper<Doctor>()
+                .eq(Doctor::getId, SecurityUtils.currentDoctorId())
+                .set(Doctor::getAvatar, avatarUrl));
+        
+        Map<String, String> result = new HashMap<>();
+        result.put("url", avatarUrl);
+        return ApiResult.ok(result);
     }
 
     @PutMapping("/password")

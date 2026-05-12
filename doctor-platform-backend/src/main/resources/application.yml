@@ -46,3 +46,9 @@ app:
 
 file:
   upload-dir: ${FILE_UPLOAD_DIR:./uploads}
+
+oss:
+  endpoint: ${OSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}
+  access-key-id: ${OSS_ACCESS_KEY_ID:}
+  access-key-secret: ${OSS_ACCESS_KEY_SECRET:}
+  bucket-name: ${OSS_BUCKET_NAME:doctor-platform}

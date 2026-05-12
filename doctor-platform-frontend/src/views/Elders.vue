@@ -102,11 +102,14 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, nextTick } from 'vue'
+import { reactive, ref, nextTick, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import http from '../api/http'
 import { createRowIndexGetter } from '../utils/listTable'
 import { required, optionalMobile, optionalIdCard18, MOBILE_PATTERN } from '../utils/validators'
+
+const route = useRoute()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -239,7 +242,15 @@ async function remove(row) {
   load()
 }
 
-onMounted(load)
+watch(
+  () => route.query.name,
+  (val) => {
+    query.name = val ? String(val) : ''
+    page.value = 1
+    load()
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
