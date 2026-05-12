@@ -34,11 +34,13 @@
     <div class="chart-section">
       <el-card class="chart-card">
         <template #header>
-          <span class="chart-title">健康趋势分析</span>
-          <el-select v-model="chartElderId" class="elder-select" placeholder="选择老人">
-            <el-option :value="null" label="全部老人统计" />
-            <el-option v-for="e in elders" :key="e.id" :value="e.id" :label="e.name" />
-          </el-select>
+          <div class="chart-header">
+            <span class="chart-title">健康趋势分析</span>
+            <el-select v-model="chartElderId" class="elder-select" placeholder="选择老人">
+              <el-option :value="null" label="全部老人统计" />
+              <el-option v-for="e in elders" :key="e.id" :value="e.id" :label="e.name" />
+            </el-select>
+          </div>
         </template>
         <div ref="chartRef" class="chart-container"></div>
       </el-card>
@@ -361,7 +363,18 @@ onUnmounted(() => {
 }
 
 .chart-card {
-  height: 400px;
+  min-height: 420px;
+}
+
+.chart-card :deep(.el-card__body) {
+  height: 350px;
+  padding: 16px;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .chart-title {
@@ -374,7 +387,8 @@ onUnmounted(() => {
 }
 
 .chart-container {
-  height: calc(100% - 60px);
+  width: 100%;
+  height: 100%;
 }
 
 .bottom-section {
